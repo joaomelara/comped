@@ -5,7 +5,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "SETOR_EMPRESA")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode
 public class SetorEmpresa {
 
     @Id

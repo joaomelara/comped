@@ -1,4 +1,11 @@
 package br.com.fiap.comped.dto;
 
-public class EquipamentoDTO {
-}
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
+public record EquipamentoDTO(
+        @Size(max = 100) String nomeEquipamento,
+        @Min(0) Double limiteKwh,
+        Boolean ativo
+) {}
+
