@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 public interface ConsumoRepository extends JpaRepository<ConsumoEnergia, Long> {
+    List<ConsumoEnergia> findByEquipamento_IdEquipamento(Long equipId);
     List<ConsumoEnergia> findByEquipamento_IdEquipamentoAndDataConsumoBetween(Long equipId, Instant inicio, Instant fim);
     boolean existsByEquipamento_IdEquipamentoAndDataConsumo(Long equipId, Instant dataConsumo);
 }

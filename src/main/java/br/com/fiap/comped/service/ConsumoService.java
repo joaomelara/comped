@@ -22,10 +22,18 @@ public class ConsumoService {
     }
 
     public List<ConsumoEnergia> listar(Long equipId, Instant inicio, Instant fim) {
-        if (inicio == null || fim == null) {
-            fim = Instant.now();
-            inicio = fim.minusSeconds(86400 * 30);
+        if (inicio == null && fim == null) {
+            // Return all records for this equipment
+            return consumoRepository.findByEquipamento_IdEquipamento(equipId);
         }
+
+        if (inicio == null) {
+            inicio = Instant.EPOCH;
+        }
+        if (fim == null) {
+            fim = Instant.now();
+        }
+
         return consumoRepository.findByEquipamento_IdEquipamentoAndDataConsumoBetween(equipId, inicio, fim);
     }
 
@@ -43,7 +51,7 @@ public class ConsumoService {
         consumo.setKwhConsumo(dto.kwhConsumo());
 
         if (dto.kwhConsumo() > eqp.getLimiteKwh()) {
-            System.out.println("⚠️ Alerta: consumo acima do limite do equipamento " + eqp.getNomeEquipamento());
+            System.out.println("Alerta: consumo acima do limite do equipamento " + eqp.getNomeEquipamento());
         }
 
         return consumoRepository.save(consumo);
