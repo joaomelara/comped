@@ -1,11 +1,13 @@
 package br.com.fiap.comped.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
+
+import java.time.LocalDate;
 
 public record EquipamentoDTO(
-        @Size(max = 100) String nomeEquipamento,
-        @Min(0) Double limiteKwh,
-        Boolean ativo
+        @NotNull Long setorId,
+        @NotBlank @Size(max = 100) String nomeEquipamento,
+        @PastOrPresent LocalDate dataInstalacao,
+        @Min(0) Double limiteKwh
 ) {}
 
