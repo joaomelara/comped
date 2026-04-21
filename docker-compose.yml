@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Oracle Database Service
+  oracle:
+    image: gvenzl/oracle-xe:latest
+    container_name: comped-oracle
+    environment:
+      ORACLE_PASSWORD: 260504
+      ORACLE_CHARSET: AL32UTF8
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
+    networks:
+      - comped-network
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "sys/260504@localhost:1521/xe", "as sysdba", "@?/rdbms/admin/sqlnet.fna"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comped-app
+    depends_on:
+      oracle:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@oracle:1521:xe
+      SPRING_DATASOURCE_USERNAME: system
+      SPRING_DATASOURCE_PASSWORD: 260504
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_FLYWAY_BASELINEONMIGRATE: "true"
+      MINHA_CHAVE_SECRETA: meusegredo123
+    ports:
+      - "8080:8080"
+    networks:
+      - comped-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  oracle_data:
+
+networks:
+  comped-network:
+    driver: bridge
+
