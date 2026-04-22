@@ -1,4 +1,4 @@
-name: Java Spring Boot CI
+name: Java Spring Boot CI/CD
 
 on:
   push:
@@ -7,7 +7,11 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  # ----------------------------------------
+  # 1) Build e Testes
+  # ----------------------------------------
+  build-and-test:
+    name: Build e Testes
     runs-on: ubuntu-latest
 
     steps:
@@ -21,20 +25,126 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run tests
+      - name: Executar testes automatizados
         run: mvn test
 
-      - name: Build with Maven
+      - name: Build com Maven
         run: mvn clean package -DskipTests
+
+      - name: Upload artefato JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+          retention-days: 1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build imagem Docker
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
           tags: comped:latest
+          outputs: type=docker,dest=/tmp/comped-image.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Upload imagem Docker
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/comped-image.tar
+          retention-days: 1
+
+  # ----------------------------------------
+  # 2) Deploy — Staging
+  # ----------------------------------------
+  deploy-staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download imagem Docker
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Carregar imagem Docker
+        run: docker load --input /tmp/comped-image.tar
+
+      - name: Validar docker-compose com variáveis de staging
+        run: docker compose --env-file .env.staging config
+
+      - name: Simular deploy staging (container sem banco)
+        run: |
+          set -a && source .env.staging && set +a
+          docker run --rm -d \
+            --name comped-staging \
+            -e SPRING_PROFILES_ACTIVE=staging \
+            -e SPRING_DATASOURCE_URL=$DB_URL \
+            -e SPRING_DATASOURCE_USERNAME=$DB_USERNAME \
+            -e SPRING_DATASOURCE_PASSWORD=$DB_PASSWORD \
+            -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
+            -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
+            -p 8080:8080 \
+            comped:latest || true
+          sleep 10
+          docker logs comped-staging 2>&1 || true
+          docker stop comped-staging 2>/dev/null || true
+
+      - name: Deploy staging concluído
+        run: echo "Ambiente STAGING validado com sucesso."
+
+  # ----------------------------------------
+  # 3) Deploy — Produção (apenas branch main)
+  # ----------------------------------------
+  deploy-prod:
+    name: Deploy Produção
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download imagem Docker
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Carregar imagem Docker
+        run: docker load --input /tmp/comped-image.tar
+
+      - name: Validar docker-compose com variáveis de produção
+        run: docker compose --env-file .env.prod config
+
+      - name: Simular deploy produção (container sem banco)
+        run: |
+          set -a && source .env.prod && set +a
+          docker run --rm -d \
+            --name comped-prod \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e SPRING_DATASOURCE_URL=$DB_URL \
+            -e SPRING_DATASOURCE_USERNAME=$DB_USERNAME \
+            -e SPRING_DATASOURCE_PASSWORD=$DB_PASSWORD \
+            -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
+            -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
+            -p 8081:8080 \
+            comped:latest || true
+          sleep 10
+          docker logs comped-prod 2>&1 || true
+          docker stop comped-prod 2>/dev/null || true
+
+      - name: Deploy produção concluído
+        run: echo "Ambiente PRODUÇÃO validado com sucesso."

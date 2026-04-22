@@ -6,7 +6,7 @@ services:
     image: gvenzl/oracle-xe:latest
     container_name: comped-oracle
     environment:
-      ORACLE_PASSWORD: 260504
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
       ORACLE_CHARSET: AL32UTF8
     ports:
       - "1521:1521"
@@ -16,7 +16,7 @@ services:
     networks:
       - comped-network
     healthcheck:
-      test: ["CMD", "sqlplus", "-L", "sys/260504@localhost:1521/xe", "as sysdba", "@?/rdbms/admin/sqlnet.fna"]
+      test: ["CMD", "sqlplus", "-L", "sys/${ORACLE_PASSWORD}@localhost:1521/xe", "as sysdba", "@?/rdbms/admin/sqlnet.fna"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,14 +31,16 @@ services:
       oracle:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@oracle:1521:xe
-      SPRING_DATASOURCE_USERNAME: system
-      SPRING_DATASOURCE_PASSWORD: 260504
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_FLYWAY_BASELINEONMIGRATE: "true"
-      MINHA_CHAVE_SECRETA: meusegredo123
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-staging}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      SPRING_FLYWAY_BASELINEONMIGRATE: ${FLYWAY_BASELINE:-true}
+      MINHA_CHAVE_SECRETA: ${JWT_SECRET}
+      LOGGING_LEVEL_BR_COM_FIAP_COMPED: ${LOG_LEVEL:-INFO}
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     networks:
       - comped-network
     healthcheck:
@@ -54,4 +56,3 @@ volumes:
 networks:
   comped-network:
     driver: bridge
-
