@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment files (nunca subir credenciais reais) ###
+.env.staging
+.env.prod
+.env
+# .env.example é mantido propositalmente
