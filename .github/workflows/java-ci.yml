@@ -83,10 +83,20 @@ jobs:
       - name: Validar docker-compose com variáveis de staging
         run: docker compose --env-file .env.staging config
 
+      - name: Verificar imagem Docker carregada
+        run: docker images | grep comped || echo "Imagem não encontrada"
+
       - name: Simular deploy staging (container sem banco)
         run: |
+          # Carregar variáveis de staging
           set -a && source .env.staging && set +a
-          docker run --rm -d \
+          
+          # Remover container anterior se existir
+          docker rm -f comped-staging 2>/dev/null || true
+          
+          # Criar e executar container
+          echo "Iniciando container comped-staging..."
+          docker run -d \
             --name comped-staging \
             -e SPRING_PROFILES_ACTIVE=staging \
             -e SPRING_DATASOURCE_URL=$DB_URL \
@@ -95,10 +105,23 @@ jobs:
             -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
             -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
             -p 8080:8080 \
-            comped:latest || true
-          sleep 10
-          docker logs comped-staging 2>&1 || true
-          docker stop comped-staging 2>/dev/null || true
+            comped:latest
+          
+          # Aguardar inicialização
+          sleep 15
+          
+          # Verificar se container está rodando
+          if docker ps | grep comped-staging > /dev/null; then
+            echo "✅ Container comped-staging está rodando"
+            docker logs comped-staging
+          else
+            echo "❌ Container não está rodando. Logs:"
+            docker logs comped-staging 2>&1 || echo "Sem logs disponíveis"
+          fi
+          
+          # Limpar
+          docker stop comped-staging || true
+          docker rm -f comped-staging || true
 
       - name: Deploy staging concluído
         run: echo "Ambiente STAGING validado com sucesso."
@@ -129,10 +152,20 @@ jobs:
       - name: Validar docker-compose com variáveis de produção
         run: docker compose --env-file .env.prod config
 
+      - name: Verificar imagem Docker carregada
+        run: docker images | grep comped || echo "Imagem não encontrada"
+
       - name: Simular deploy produção (container sem banco)
         run: |
+          # Carregar variáveis de produção
           set -a && source .env.prod && set +a
-          docker run --rm -d \
+          
+          # Remover container anterior se existir
+          docker rm -f comped-prod 2>/dev/null || true
+          
+          # Criar e executar container
+          echo "Iniciando container comped-prod..."
+          docker run -d \
             --name comped-prod \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e SPRING_DATASOURCE_URL=$DB_URL \
@@ -141,10 +174,23 @@ jobs:
             -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
             -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
             -p 8081:8080 \
-            comped:latest || true
-          sleep 10
-          docker logs comped-prod 2>&1 || true
-          docker stop comped-prod 2>/dev/null || true
+            comped:latest
+          
+          # Aguardar inicialização
+          sleep 15
+          
+          # Verificar se container está rodando
+          if docker ps | grep comped-prod > /dev/null; then
+            echo "✅ Container comped-prod está rodando"
+            docker logs comped-prod
+          else
+            echo "❌ Container não está rodando. Logs:"
+            docker logs comped-prod 2>&1 || echo "Sem logs disponíveis"
+          fi
+          
+          # Limpar
+          docker stop comped-prod || true
+          docker rm -f comped-prod || true
 
       - name: Deploy produção concluído
         run: echo "Ambiente PRODUÇÃO validado com sucesso."
