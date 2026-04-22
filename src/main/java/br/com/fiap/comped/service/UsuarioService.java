@@ -16,8 +16,11 @@ import java.util.Optional;
 @Service
 public class UsuarioService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    public UsuarioService(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
+    }
 
     public UsuarioExibicaoDTO salvarUsuario(UsuarioCadastroDTO usuarioDTO) {
         String senhaCriptografada = new BCryptPasswordEncoder().encode(usuarioDTO.senhaUsuario());
