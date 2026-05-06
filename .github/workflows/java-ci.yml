@@ -86,7 +86,34 @@ jobs:
       - name: Verificar imagem Docker carregada
         run: docker images | grep comped || echo "Imagem não encontrada"
 
-      - name: Simular deploy staging (container sem banco)
+      - name: Start Oracle Database
+        run: |
+          docker run -d \
+            --name oracle-staging \
+            -e ORACLE_PASSWORD="260504" \
+            -p 1521:1521 \
+            gvenzl/oracle-xe:latest
+          
+          # Wait for Oracle to be ready (max 120 seconds)
+          echo "Aguardando Oracle inicializar..."
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if docker exec oracle-staging sqlplus -v &>/dev/null || docker logs oracle-staging | grep -q "DATABASE IS OPEN"; then
+              echo "✅ Oracle iniciado com sucesso"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "Tentativa $attempt/$max_attempts..."
+            sleep 2
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "⚠️ Oracle pode não estar totalmente pronto, continuando mesmo assim..."
+            docker logs oracle-staging
+          fi
+
+      - name: Simular deploy staging (com banco de dados)
         run: |
           # Carregar variáveis de staging
           set -a && source .env.staging && set +a
@@ -94,34 +121,42 @@ jobs:
           # Remover container anterior se existir
           docker rm -f comped-staging 2>/dev/null || true
           
-          # Criar e executar container
+          # Criar network para conectar app ao banco
+          docker network create comped-ci 2>/dev/null || true
+          
+          # Conectar Oracle à network
+          docker network connect comped-ci oracle-staging 2>/dev/null || true
+          
+          # Criar e executar container com conexão ao banco
           echo "Iniciando container comped-staging..."
           docker run -d \
             --name comped-staging \
+            --network comped-ci \
             -e SPRING_PROFILES_ACTIVE=staging \
-            -e SPRING_DATASOURCE_URL=$DB_URL \
-            -e SPRING_DATASOURCE_USERNAME=$DB_USERNAME \
-            -e SPRING_DATASOURCE_PASSWORD=$DB_PASSWORD \
+            -e SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-staging:1521:xe \
+            -e SPRING_DATASOURCE_USERNAME=system \
+            -e SPRING_DATASOURCE_PASSWORD=260504 \
             -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
             -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
             -p 8080:8080 \
             comped:latest
           
           # Aguardar inicialização
-          sleep 15
+          sleep 20
           
           # Verificar se container está rodando
           if docker ps | grep comped-staging > /dev/null; then
             echo "✅ Container comped-staging está rodando"
-            docker logs comped-staging
+            docker logs comped-staging | tail -50
           else
             echo "❌ Container não está rodando. Logs:"
             docker logs comped-staging 2>&1 || echo "Sem logs disponíveis"
           fi
           
           # Limpar
-          docker stop comped-staging || true
-          docker rm -f comped-staging || true
+          docker stop comped-staging oracle-staging 2>/dev/null || true
+          docker rm -f comped-staging oracle-staging 2>/dev/null || true
+          docker network rm comped-ci 2>/dev/null || true
 
       - name: Deploy staging concluído
         run: echo "Ambiente STAGING validado com sucesso."
@@ -149,13 +184,34 @@ jobs:
       - name: Carregar imagem Docker
         run: docker load --input /tmp/comped-image.tar
 
-      - name: Validar docker-compose com variáveis de produção
-        run: docker compose --env-file .env.prod config
+      - name: Start Oracle Database
+        run: |
+          docker run -d \
+            --name oracle-prod \
+            -e ORACLE_PASSWORD="260504" \
+            -p 1522:1521 \
+            gvenzl/oracle-xe:latest
+          
+          # Wait for Oracle to be ready (max 120 seconds)
+          echo "Aguardando Oracle inicializar..."
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if docker exec oracle-prod sqlplus -v &>/dev/null || docker logs oracle-prod | grep -q "DATABASE IS OPEN"; then
+              echo "✅ Oracle iniciado com sucesso"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "Tentativa $attempt/$max_attempts..."
+            sleep 2
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "⚠️ Oracle pode não estar totalmente pronto, continuando mesmo assim..."
+            docker logs oracle-prod
+          fi
 
-      - name: Verificar imagem Docker carregada
-        run: docker images | grep comped || echo "Imagem não encontrada"
-
-      - name: Simular deploy produção (container sem banco)
+      - name: Simular deploy produção (com banco de dados)
         run: |
           # Carregar variáveis de produção
           set -a && source .env.prod && set +a
@@ -163,34 +219,42 @@ jobs:
           # Remover container anterior se existir
           docker rm -f comped-prod 2>/dev/null || true
           
-          # Criar e executar container
+          # Criar network para conectar app ao banco
+          docker network create comped-ci-prod 2>/dev/null || true
+          
+          # Conectar Oracle à network
+          docker network connect comped-ci-prod oracle-prod 2>/dev/null || true
+          
+          # Criar e executar container com conexão ao banco
           echo "Iniciando container comped-prod..."
           docker run -d \
             --name comped-prod \
+            --network comped-ci-prod \
             -e SPRING_PROFILES_ACTIVE=prod \
-            -e SPRING_DATASOURCE_URL=$DB_URL \
-            -e SPRING_DATASOURCE_USERNAME=$DB_USERNAME \
-            -e SPRING_DATASOURCE_PASSWORD=$DB_PASSWORD \
+            -e SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-prod:1521:xe \
+            -e SPRING_DATASOURCE_USERNAME=system \
+            -e SPRING_DATASOURCE_PASSWORD=260504 \
             -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
             -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
             -p 8081:8080 \
             comped:latest
           
           # Aguardar inicialização
-          sleep 15
+          sleep 20
           
           # Verificar se container está rodando
           if docker ps | grep comped-prod > /dev/null; then
             echo "✅ Container comped-prod está rodando"
-            docker logs comped-prod
+            docker logs comped-prod | tail -50
           else
             echo "❌ Container não está rodando. Logs:"
             docker logs comped-prod 2>&1 || echo "Sem logs disponíveis"
           fi
           
           # Limpar
-          docker stop comped-prod || true
-          docker rm -f comped-prod || true
+          docker stop comped-prod oracle-prod 2>/dev/null || true
+          docker rm -f comped-prod oracle-prod 2>/dev/null || true
+          docker network rm comped-ci-prod 2>/dev/null || true
 
       - name: Deploy produção concluído
         run: echo "Ambiente PRODUÇÃO validado com sucesso."
