@@ -94,23 +94,26 @@ jobs:
             -p 1521:1521 \
             gvenzl/oracle-xe:latest
           
-          # Wait for Oracle to be ready (max 120 seconds)
+          # Wait for Oracle to be ready (max 180 seconds)
           echo "Aguardando Oracle inicializar..."
-          max_attempts=60
+          max_attempts=90
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            if docker exec oracle-staging sqlplus -v &>/dev/null || docker logs oracle-staging | grep -q "DATABASE IS OPEN"; then
-              echo "✅ Oracle iniciado com sucesso"
+            # Try to connect using sqlplus
+            if docker exec oracle-staging sqlplus -S -L sys/260504@localhost:1521/xe as sysdba <<< "SELECT 1 FROM DUAL;" 2>&1 | grep -q "1"; then
+              echo "✅ Oracle iniciado e conectável com sucesso!"
               break
+            else
+              attempt=$((attempt + 1))
+              echo "Tentativa $attempt/$max_attempts... Aguardando Oracle..."
+              sleep 2
             fi
-            attempt=$((attempt + 1))
-            echo "Tentativa $attempt/$max_attempts..."
-            sleep 2
           done
           
           if [ $attempt -eq $max_attempts ]; then
-            echo "⚠️ Oracle pode não estar totalmente pronto, continuando mesmo assim..."
-            docker logs oracle-staging
+            echo "❌ Oracle não respondeu após 180 segundos"
+            docker logs oracle-staging | tail -30
+            exit 1
           fi
 
       - name: Simular deploy staging (com banco de dados)
@@ -141,19 +144,34 @@ jobs:
             -p 8080:8080 \
             comped:latest
           
-          # Aguardar inicialização
-          sleep 20
+          # Aguardar inicialização (aumentado para 40 segundos)
+          echo "Aguardando Spring Boot iniciar..."
+          sleep 40
           
           # Verificar se container está rodando
           if docker ps | grep comped-staging > /dev/null; then
             echo "✅ Container comped-staging está rodando"
+            echo "=== Últimos 50 linhas de logs ===" 
             docker logs comped-staging | tail -50
+            echo "=== Fim dos logs ==="
+            
+            # Verificar se app iniciou com sucesso (sem erros no log)
+            if docker logs comped-staging 2>&1 | grep -q "Started CompedApplication"; then
+              echo "✅✅ CompedApplication iniciado com sucesso!"
+              exit 0
+            fi
+            
+            if docker logs comped-staging 2>&1 | grep -q "Application run failed"; then
+              echo "❌ Aplicação falhou ao iniciar. Verifique os logs acima."
+              exit 1
+            fi
           else
             echo "❌ Container não está rodando. Logs:"
             docker logs comped-staging 2>&1 || echo "Sem logs disponíveis"
+            exit 1
           fi
           
-          # Limpar
+          # Limpar (sempre executar mesmo se houver erro)
           docker stop comped-staging oracle-staging 2>/dev/null || true
           docker rm -f comped-staging oracle-staging 2>/dev/null || true
           docker network rm comped-ci 2>/dev/null || true
@@ -192,23 +210,26 @@ jobs:
             -p 1522:1521 \
             gvenzl/oracle-xe:latest
           
-          # Wait for Oracle to be ready (max 120 seconds)
+          # Wait for Oracle to be ready (max 180 seconds)
           echo "Aguardando Oracle inicializar..."
-          max_attempts=60
+          max_attempts=90
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            if docker exec oracle-prod sqlplus -v &>/dev/null || docker logs oracle-prod | grep -q "DATABASE IS OPEN"; then
-              echo "✅ Oracle iniciado com sucesso"
+            # Try to connect using sqlplus
+            if docker exec oracle-prod sqlplus -S -L sys/260504@localhost:1521/xe as sysdba <<< "SELECT 1 FROM DUAL;" 2>&1 | grep -q "1"; then
+              echo "✅ Oracle iniciado e conectável com sucesso!"
               break
+            else
+              attempt=$((attempt + 1))
+              echo "Tentativa $attempt/$max_attempts... Aguardando Oracle..."
+              sleep 2
             fi
-            attempt=$((attempt + 1))
-            echo "Tentativa $attempt/$max_attempts..."
-            sleep 2
           done
           
           if [ $attempt -eq $max_attempts ]; then
-            echo "⚠️ Oracle pode não estar totalmente pronto, continuando mesmo assim..."
-            docker logs oracle-prod
+            echo "❌ Oracle não respondeu após 180 segundos"
+            docker logs oracle-prod | tail -30
+            exit 1
           fi
 
       - name: Simular deploy produção (com banco de dados)
@@ -239,19 +260,34 @@ jobs:
             -p 8081:8080 \
             comped:latest
           
-          # Aguardar inicialização
-          sleep 20
+          # Aguardar inicialização (aumentado para 40 segundos)
+          echo "Aguardando Spring Boot iniciar..."
+          sleep 40
           
           # Verificar se container está rodando
           if docker ps | grep comped-prod > /dev/null; then
             echo "✅ Container comped-prod está rodando"
+            echo "=== Últimos 50 linhas de logs ===" 
             docker logs comped-prod | tail -50
+            echo "=== Fim dos logs ==="
+            
+            # Verificar se app iniciou com sucesso (sem erros no log)
+            if docker logs comped-prod 2>&1 | grep -q "Started CompedApplication"; then
+              echo "✅✅ CompedApplication iniciado com sucesso!"
+              exit 0
+            fi
+            
+            if docker logs comped-prod 2>&1 | grep -q "Application run failed"; then
+              echo "❌ Aplicação falhou ao iniciar. Verifique os logs acima."
+              exit 1
+            fi
           else
             echo "❌ Container não está rodando. Logs:"
             docker logs comped-prod 2>&1 || echo "Sem logs disponíveis"
+            exit 1
           fi
           
-          # Limpar
+          # Limpar (sempre executar mesmo se houver erro)
           docker stop comped-prod oracle-prod 2>/dev/null || true
           docker rm -f comped-prod oracle-prod 2>/dev/null || true
           docker network rm comped-ci-prod 2>/dev/null || true
