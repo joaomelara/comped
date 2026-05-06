@@ -80,12 +80,6 @@ jobs:
       - name: Carregar imagem Docker
         run: docker load --input /tmp/comped-image.tar
 
-      - name: Validar docker-compose com variáveis de staging
-        run: docker compose --env-file .env.staging config
-
-      - name: Verificar imagem Docker carregada
-        run: docker images | grep comped || echo "Imagem não encontrada"
-
       - name: Start Oracle Database
         run: |
           docker run -d \
@@ -115,66 +109,41 @@ jobs:
             docker logs oracle-staging | tail -30
             exit 1
           fi
+          
+          # Give extra time for network initialization
+          sleep 10
 
       - name: Simular deploy staging (com banco de dados)
         run: |
-          # Carregar variáveis de staging
-          set -a && source .env.staging && set +a
+          # Use docker-compose for proper networking
+          docker compose -f docker-compose.staging.yml up -d
           
-          # Remover container anterior se existir
-          docker rm -f comped-staging 2>/dev/null || true
-          
-          # Criar network para conectar app ao banco
-          docker network create comped-ci 2>/dev/null || true
-          
-          # Conectar Oracle à network
-          docker network connect comped-ci oracle-staging 2>/dev/null || true
-          
-          # Criar e executar container com conexão ao banco
-          echo "Iniciando container comped-staging..."
-          docker run -d \
-            --name comped-staging \
-            --network comped-ci \
-            -e SPRING_PROFILES_ACTIVE=staging \
-            -e SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-staging:1521:xe \
-            -e SPRING_DATASOURCE_USERNAME=system \
-            -e SPRING_DATASOURCE_PASSWORD=260504 \
-            -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
-            -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
-            -p 8080:8080 \
-            comped:latest
-          
-          # Aguardar inicialização (aumentado para 40 segundos)
-          echo "Aguardando Spring Boot iniciar..."
-          sleep 40
-          
-          # Verificar se container está rodando
-          if docker ps | grep comped-staging > /dev/null; then
-            echo "✅ Container comped-staging está rodando"
-            echo "=== Últimos 50 linhas de logs ===" 
-            docker logs comped-staging | tail -50
-            echo "=== Fim dos logs ==="
-            
-            # Verificar se app iniciou com sucesso (sem erros no log)
-            if docker logs comped-staging 2>&1 | grep -q "Started CompedApplication"; then
-              echo "✅✅ CompedApplication iniciado com sucesso!"
+          # Wait for app to be ready
+          echo "Aguardando aplicação iniciar..."
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            # Check if app is responding
+            if curl -f http://localhost:8080/health 2>/dev/null | grep -q "UP"; then
+              echo "✅✅ Aplicação iniciada e saudável!"
               exit 0
+            else
+              attempt=$((attempt + 1))
+              echo "Tentativa $attempt/$max_attempts... Aguardando saúde da aplicação..."
+              sleep 2
             fi
-            
-            if docker logs comped-staging 2>&1 | grep -q "Application run failed"; then
-              echo "❌ Aplicação falhou ao iniciar. Verifique os logs acima."
-              exit 1
-            fi
-          else
-            echo "❌ Container não está rodando. Logs:"
-            docker logs comped-staging 2>&1 || echo "Sem logs disponíveis"
-            exit 1
-          fi
+          done
           
-          # Limpar (sempre executar mesmo se houver erro)
-          docker stop comped-staging oracle-staging 2>/dev/null || true
-          docker rm -f comped-staging oracle-staging 2>/dev/null || true
-          docker network rm comped-ci 2>/dev/null || true
+          echo "❌ Aplicação não respondeu após 120 segundos"
+          docker compose -f docker-compose.staging.yml logs app
+          docker compose -f docker-compose.staging.yml down
+          exit 1
+
+      - name: Cleanup after staging deploy
+        if: always()
+        run: |
+          docker compose -f docker-compose.staging.yml down -v 2>/dev/null || true
+          docker rm -f oracle-staging comped-staging 2>/dev/null || true
 
       - name: Deploy staging concluído
         run: echo "Ambiente STAGING validado com sucesso."
@@ -231,66 +200,41 @@ jobs:
             docker logs oracle-prod | tail -30
             exit 1
           fi
+          
+          # Give extra time for network initialization
+          sleep 10
 
       - name: Simular deploy produção (com banco de dados)
         run: |
-          # Carregar variáveis de produção
-          set -a && source .env.prod && set +a
+          # Use docker-compose for proper networking
+          docker compose -f docker-compose.prod.yml up -d
           
-          # Remover container anterior se existir
-          docker rm -f comped-prod 2>/dev/null || true
-          
-          # Criar network para conectar app ao banco
-          docker network create comped-ci-prod 2>/dev/null || true
-          
-          # Conectar Oracle à network
-          docker network connect comped-ci-prod oracle-prod 2>/dev/null || true
-          
-          # Criar e executar container com conexão ao banco
-          echo "Iniciando container comped-prod..."
-          docker run -d \
-            --name comped-prod \
-            --network comped-ci-prod \
-            -e SPRING_PROFILES_ACTIVE=prod \
-            -e SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-prod:1521:xe \
-            -e SPRING_DATASOURCE_USERNAME=system \
-            -e SPRING_DATASOURCE_PASSWORD=260504 \
-            -e MINHA_CHAVE_SECRETA=$JWT_SECRET \
-            -e LOGGING_LEVEL_BR_COM_FIAP_COMPED=$LOG_LEVEL \
-            -p 8081:8080 \
-            comped:latest
-          
-          # Aguardar inicialização (aumentado para 40 segundos)
-          echo "Aguardando Spring Boot iniciar..."
-          sleep 40
-          
-          # Verificar se container está rodando
-          if docker ps | grep comped-prod > /dev/null; then
-            echo "✅ Container comped-prod está rodando"
-            echo "=== Últimos 50 linhas de logs ===" 
-            docker logs comped-prod | tail -50
-            echo "=== Fim dos logs ==="
-            
-            # Verificar se app iniciou com sucesso (sem erros no log)
-            if docker logs comped-prod 2>&1 | grep -q "Started CompedApplication"; then
-              echo "✅✅ CompedApplication iniciado com sucesso!"
+          # Wait for app to be ready
+          echo "Aguardando aplicação iniciar..."
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            # Check if app is responding
+            if curl -f http://localhost:8081/health 2>/dev/null | grep -q "UP"; then
+              echo "✅✅ Aplicação iniciada e saudável!"
               exit 0
+            else
+              attempt=$((attempt + 1))
+              echo "Tentativa $attempt/$max_attempts... Aguardando saúde da aplicação..."
+              sleep 2
             fi
-            
-            if docker logs comped-prod 2>&1 | grep -q "Application run failed"; then
-              echo "❌ Aplicação falhou ao iniciar. Verifique os logs acima."
-              exit 1
-            fi
-          else
-            echo "❌ Container não está rodando. Logs:"
-            docker logs comped-prod 2>&1 || echo "Sem logs disponíveis"
-            exit 1
-          fi
+          done
           
-          # Limpar (sempre executar mesmo se houver erro)
-          docker stop comped-prod oracle-prod 2>/dev/null || true
-          docker rm -f comped-prod oracle-prod 2>/dev/null || true
-          docker network rm comped-ci-prod 2>/dev/null || true
+          echo "❌ Aplicação não respondeu após 120 segundos"
+          docker compose -f docker-compose.prod.yml logs app
+          docker compose -f docker-compose.prod.yml down
+          exit 1
+
+      - name: Cleanup after production deploy
+        if: always()
+        run: |
+          docker compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+          docker rm -f oracle-prod comped-prod 2>/dev/null || true
 
       - name: Deploy produção concluído
         run: echo "Ambiente PRODUÇÃO validado com sucesso."
