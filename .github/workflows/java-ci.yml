@@ -80,41 +80,12 @@ jobs:
       - name: Carregar imagem Docker
         run: docker load --input /tmp/comped-image.tar
 
-      - name: Start Oracle Database
-        run: |
-          docker run -d \
-            --name oracle-staging \
-            -e ORACLE_PASSWORD="260504" \
-            -p 1521:1521 \
-            gvenzl/oracle-xe:latest
-          
-          # Wait for Oracle to be ready (max 180 seconds)
-          echo "Aguardando Oracle inicializar..."
-          max_attempts=90
-          attempt=0
-          while [ $attempt -lt $max_attempts ]; do
-            # Try to connect using sqlplus
-            if docker exec oracle-staging sqlplus -S -L sys/260504@localhost:1521/xe as sysdba <<< "SELECT 1 FROM DUAL;" 2>&1 | grep -q "1"; then
-              echo "✅ Oracle iniciado e conectável com sucesso!"
-              break
-            else
-              attempt=$((attempt + 1))
-              echo "Tentativa $attempt/$max_attempts... Aguardando Oracle..."
-              sleep 2
-            fi
-          done
-          
-          if [ $attempt -eq $max_attempts ]; then
-            echo "❌ Oracle não respondeu após 180 segundos"
-            docker logs oracle-staging | tail -30
-            exit 1
-          fi
-          
-          # Give extra time for network initialization
-          sleep 10
-
       - name: Simular deploy staging (com banco de dados)
         run: |
+          # Cleanup any existing containers from previous runs
+          docker rm -f comped-oracle-staging comped-app-staging oracle-staging 2>/dev/null || true
+          docker network rm comped-network-staging comped_comped-network-staging 2>/dev/null || true
+          
           # Use docker-compose for proper networking
           docker compose -f docker-compose.staging.yml up -d
           
@@ -124,7 +95,7 @@ jobs:
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
             # Check if app is responding
-            if curl -f http://localhost:8080/health 2>/dev/null | grep -q "UP"; then
+            if curl -f http://localhost:8080/actuator/health 2>/dev/null | grep -q "UP"; then
               echo "✅✅ Aplicação iniciada e saudável!"
               exit 0
             else
@@ -171,41 +142,12 @@ jobs:
       - name: Carregar imagem Docker
         run: docker load --input /tmp/comped-image.tar
 
-      - name: Start Oracle Database
-        run: |
-          docker run -d \
-            --name oracle-prod \
-            -e ORACLE_PASSWORD="260504" \
-            -p 1522:1521 \
-            gvenzl/oracle-xe:latest
-          
-          # Wait for Oracle to be ready (max 180 seconds)
-          echo "Aguardando Oracle inicializar..."
-          max_attempts=90
-          attempt=0
-          while [ $attempt -lt $max_attempts ]; do
-            # Try to connect using sqlplus
-            if docker exec oracle-prod sqlplus -S -L sys/260504@localhost:1521/xe as sysdba <<< "SELECT 1 FROM DUAL;" 2>&1 | grep -q "1"; then
-              echo "✅ Oracle iniciado e conectável com sucesso!"
-              break
-            else
-              attempt=$((attempt + 1))
-              echo "Tentativa $attempt/$max_attempts... Aguardando Oracle..."
-              sleep 2
-            fi
-          done
-          
-          if [ $attempt -eq $max_attempts ]; then
-            echo "❌ Oracle não respondeu após 180 segundos"
-            docker logs oracle-prod | tail -30
-            exit 1
-          fi
-          
-          # Give extra time for network initialization
-          sleep 10
-
       - name: Simular deploy produção (com banco de dados)
         run: |
+          # Cleanup any existing containers from previous runs
+          docker rm -f comped-oracle-prod comped-app-prod oracle-prod 2>/dev/null || true
+          docker network rm comped-network-prod comped_comped-network-prod 2>/dev/null || true
+          
           # Use docker-compose for proper networking
           docker compose -f docker-compose.prod.yml up -d
           
@@ -215,7 +157,7 @@ jobs:
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
             # Check if app is responding
-            if curl -f http://localhost:8081/health 2>/dev/null | grep -q "UP"; then
+            if curl -f http://localhost:8081/actuator/health 2>/dev/null | grep -q "UP"; then
               echo "✅✅ Aplicação iniciada e saudável!"
               exit 0
             else
