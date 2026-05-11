@@ -11,6 +11,8 @@ Funcionalidade: Gerenciamento de setores
       | nomeSetor  | Tecnologia   |
     Quando eu enviar a requisição para o endpoint "/setores" de cadastro de setores
     Então o status code da resposta de setor deve ser 201
+    E que o arquivo de contrato esperado é o "Cadastro bem-sucedido de setor"
+    Então a resposta da requisição deve estar em conformidade com o contrato selecionado
 
   Cenário: Tentativa de cadastro de setor sem nome
     Dado que eu tenha os seguintes dados do setor:

@@ -1,7 +1,9 @@
 package br.com.fiap.comped.bdd.steps;
 
 import br.com.fiap.comped.bdd.service.SetorService;
+import io.cucumber.java.PendingException;
 import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.E;
 import io.cucumber.java.pt.Então;
 import io.cucumber.java.pt.Quando;
 import org.junit.Assert;
@@ -65,5 +67,17 @@ public class SetorSteps {
                 statusCode,
                 setorService.response.statusCode()
         );
+    }
+
+    @E("que o arquivo de contrato esperado é o {string}")
+    public void queOArquivoDeContratoEsperadoÉO(String arg0) {
+        // Write code here that turns the phrase above into concrete actions
+        throw new PendingException();
+    }
+
+    @Então("a resposta da requisição deve estar em conformidade com o contrato selecionado")
+    public void aRespostaDaRequisiçãoDeveEstarEmConformidadeComOContratoSelecionado() {
+        // Write code here that turns the phrase above into concrete actions
+        throw new PendingException();
     }
 }
