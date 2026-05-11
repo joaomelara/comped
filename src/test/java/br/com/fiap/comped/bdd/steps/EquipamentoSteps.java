@@ -12,18 +12,13 @@ import java.util.Map;
 
 public class EquipamentoSteps {
 
-    EquipamentoService equipamentoService =
-            new EquipamentoService();
+    EquipamentoService equipamentoService = new EquipamentoService();
 
-    Long idEquipamentoCriado = 1L;
+    long idEquipamentoCriado;
 
     @Dado("que eu tenha os seguintes dados do equipamento:")
-    public void queEuTenhaOsSeguintesDadosDoEquipamento(
-            List<Map<String, String>> rows
-    ) {
-
+    public void queEuTenhaOsSeguintesDadosDoEquipamento(List<Map<String, String>> rows) {
         for (Map<String, String> columns : rows) {
-
             equipamentoService.setFieldsEquipamento(
                     columns.get("campo"),
                     columns.get("valor")
@@ -31,64 +26,44 @@ public class EquipamentoSteps {
         }
     }
 
-    // POST
-    @Quando("eu enviar a requisição para o endpoint {string} de cadastro de equipamentos")
-    public void euEnviarARequisicaoParaOEndpointDeCadastroDeEquipamentos(
-            String endPoint
-    ) {
 
-        equipamentoService.createEquipamento(endPoint);
-    }
+    @Dado("que existe um equipamento cadastrado no sistema")
+    public void queExisteUmEquipamentoCadastradoNoSistema() {
+        equipamentoService.setFieldsEquipamento("nomeEquipamento", "Equipamento Teste BDD");
+        equipamentoService.setFieldsEquipamento("setorId",         "1");
+        equipamentoService.setFieldsEquipamento("dataInstalacao",  "2024-01-15");
+        equipamentoService.setFieldsEquipamento("limiteKwh",       "100.0");
+        equipamentoService.createEquipamento("/equipamentos");
 
-    // GET
-    @Quando("eu enviar a requisição para o endpoint {string} de listagem de equipamentos")
-    public void euEnviarARequisicaoParaOEndpointDeListagemDeEquipamentos(
-            String endPoint
-    ) {
-
-        equipamentoService.getAllEquipamentos(endPoint);
+        idEquipamentoCriado = equipamentoService.response
+                .jsonPath()
+                .getLong("idEquipamento");
     }
 
     @Dado("que existe pelo menos um equipamento cadastrado no sistema")
     public void queExistePeloMenosUmEquipamentoCadastradoNoSistema() {
-
-        equipamentoService.setFieldsEquipamento(
-                "nomeEquipamento",
-                "Ar Condicionado"
-        );
-
-        equipamentoService.setFieldsEquipamento(
-                "consumoKwh",
-                "12.5"
-        );
-
-        equipamentoService.setFieldsEquipamento(
-                "ativo",
-                "true"
-        );
-
-        equipamentoService.setFieldsEquipamento(
-                "setorId",
-                "1"
-        );
-
-        equipamentoService.createEquipamento(
-                "/equipamentos"
-        );
-
-        idEquipamentoCriado = equipamentoService.response
-                .jsonPath()
-                .getLong("id");
+        equipamentoService.setFieldsEquipamento("nomeEquipamento", "Equipamento Base BDD");
+        equipamentoService.setFieldsEquipamento("setorId",         "1");
+        equipamentoService.setFieldsEquipamento("dataInstalacao",  "2024-01-15");
+        equipamentoService.setFieldsEquipamento("limiteKwh",       "50.0");
+        equipamentoService.createEquipamento("/equipamentos");
     }
 
-    // PUT
+
+    @Quando("eu enviar a requisição para o endpoint {string} de cadastro de equipamentos")
+    public void euEnviarARequisicaoParaOEndpointDeCadastroDeEquipamentos(String endPoint) {
+        equipamentoService.createEquipamento(endPoint);
+    }
+
+    @Quando("eu enviar a requisição para o endpoint {string} de listagem de equipamentos")
+    public void euEnviarARequisicaoParaOEndpointDeListagemDeEquipamentos(String endPoint) {
+        equipamentoService.getAllEquipamentos(endPoint);
+    }
+
+
     @E("que eu tenha os seguintes dados atualizados do equipamento:")
-    public void queEuTenhaOsSeguintesDadosAtualizadosDoEquipamento(
-            List<Map<String, String>> rows
-    ) {
-
+    public void queEuTenhaOsSeguintesDadosAtualizadosDoEquipamento(List<Map<String, String>> rows) {
         for (Map<String, String> columns : rows) {
-
             equipamentoService.setFieldsEquipamento(
                     columns.get("campo"),
                     columns.get("valor")
@@ -97,24 +72,19 @@ public class EquipamentoSteps {
     }
 
     @Quando("eu enviar a requisição de atualização para o endpoint {string} de equipamentos")
-    public void euEnviarARequisicaoDeAtualizacaoParaOEndpointDeEquipamentos(
-            String endPoint
-    ) {
-
-        equipamentoService.updateEquipamento(
-                "/equipamentos",
-                idEquipamentoCriado
-        );
+    public void euEnviarARequisicaoDeAtualizacaoParaOEndpointDeEquipamentos(String endPoint) {
+        equipamentoService.updateEquipamento("/equipamentos", idEquipamentoCriado);
     }
 
-    @Então("o status code da resposta de equipamento deve ser {int}")
-    public void oStatusCodeDaRespostaDeEquipamentoDeveSer(
-            int statusCode
-    ) {
 
-        Assert.assertEquals(
-                statusCode,
-                equipamentoService.response.statusCode()
-        );
+    @Quando("eu enviar a requisição de atualização para o endpoint {string} de equipamento inexistente")
+    public void euEnviarARequisicaoDeAtualizacaoParaEquipamentoInexistente(String endPoint) {
+        equipamentoService.updateEquipamentoInexistente("/equipamentos", 999999L);
+    }
+
+
+    @Então("o status code da resposta de equipamentos deve ser {int}")
+    public void oStatusCodeDaRespostaDeEquipamentosDeveSer(int statusCode) {
+        Assert.assertEquals(statusCode, equipamentoService.response.statusCode());
     }
 }
