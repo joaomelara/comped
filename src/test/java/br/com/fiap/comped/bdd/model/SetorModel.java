@@ -5,8 +5,10 @@ import lombok.Data;
 
 @Data
 public class SetorModel {
+
     @Expose(serialize = false)
-    private long idSetor;
+    private Long id;
+
     @Expose
     private String nomeSetor;
 }
