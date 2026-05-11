@@ -3,6 +3,7 @@ package br.com.fiap.comped.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+@Data
 @Entity
 @Table(name = "SETOR_EMPRESA")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode
