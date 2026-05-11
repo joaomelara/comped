@@ -1,10 +1,7 @@
 package br.com.fiap.comped.bdd.model;
 
-import br.com.fiap.comped.model.EquipamentoMonitorado;
 import com.google.gson.annotations.Expose;
 import lombok.Data;
-
-import java.time.Instant;
 
 @Data
 public class ConsumoModel {
@@ -13,10 +10,10 @@ public class ConsumoModel {
     private Long idConsumo;
 
     @Expose
-    private Long equipamentoId;
+    private Long equipId;
 
     @Expose
-    private Instant dataConsumo;
+    private String dataConsumo;
 
     @Expose
     private Double kwhConsumo;
