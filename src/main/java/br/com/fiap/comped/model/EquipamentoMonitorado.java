@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 
+@Data
 @Entity
 @Table(name = "EQUIPAMENTOS_MONITORADOS")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode

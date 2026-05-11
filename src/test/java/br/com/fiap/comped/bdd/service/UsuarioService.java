@@ -11,14 +11,13 @@ import static io.restassured.RestAssured.given;
 
 public class UsuarioService {
 
-    final UsuarioModel usuarioModel = new UsuarioModel();
+    public UsuarioModel usuarioModel = new UsuarioModel();
     public final Gson gson = new GsonBuilder()
             .excludeFieldsWithoutExposeAnnotation()
             .create();
     public Response response;
     String baseUrl = "http://localhost:8080";
-
-    String emailLogin = "admin@email.com";
+    String emailLogin = "ZZ@email.com";
     String senhaLogin = "123456";
 
     private String obterToken() {
@@ -55,6 +54,12 @@ public class UsuarioService {
     }
 
     public void createUsuario(String endPoint) {
+        String emailAtual = usuarioModel.getEmailUsuario();
+        if (emailAtual == null || emailAtual.isEmpty() || !emailAtual.contains("@")) {
+            // email inválido propositalmente — não sobrescreve
+        } else {
+            usuarioModel.setEmailUsuario("usuario_" + System.currentTimeMillis() + "@email.com");
+        }
         response = request()
                 .body(gson.toJson(usuarioModel))
                 .when().post(baseUrl + endPoint)
@@ -67,20 +72,20 @@ public class UsuarioService {
                 .then().extract().response();
     }
 
-    public void getUsuarioById(String endPoint, int id) {
+    public void getUsuarioById(String endPoint, long id) {
         response = request()
                 .when().get(baseUrl + endPoint + "/" + id)
                 .then().extract().response();
     }
 
-    public void updateUsuario(String endPoint, int id) {
+    public void updateUsuario(String endPoint, long id) {
         response = request()
                 .body(gson.toJson(usuarioModel))
                 .when().put(baseUrl + endPoint + "/" + id)
                 .then().extract().response();
     }
 
-    public void deleteUsuario(String endPoint, int id) {
+    public void deleteUsuario(String endPoint, long id) {
         response = request()
                 .when().delete(baseUrl + endPoint + "/" + id)
                 .then().extract().response();

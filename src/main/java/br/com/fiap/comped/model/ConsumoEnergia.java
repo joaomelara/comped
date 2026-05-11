@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "CONSUMO_ENERGIA")
 @Getter
