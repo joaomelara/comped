@@ -1,14 +1,18 @@
 package br.com.fiap.comped.bdd.steps;
 
 import br.com.fiap.comped.bdd.service.EquipamentoService;
+import com.networknt.schema.ValidationMessage;
 import io.cucumber.java.pt.Dado;
 import io.cucumber.java.pt.E;
 import io.cucumber.java.pt.Então;
 import io.cucumber.java.pt.Quando;
+import org.json.JSONException;
 import org.junit.Assert;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class EquipamentoSteps {
 
@@ -25,7 +29,6 @@ public class EquipamentoSteps {
             );
         }
     }
-
 
     @Dado("que existe um equipamento cadastrado no sistema")
     public void queExisteUmEquipamentoCadastradoNoSistema() {
@@ -49,7 +52,6 @@ public class EquipamentoSteps {
         equipamentoService.createEquipamento("/equipamentos");
     }
 
-
     @Quando("eu enviar a requisição para o endpoint {string} de cadastro de equipamentos")
     public void euEnviarARequisicaoParaOEndpointDeCadastroDeEquipamentos(String endPoint) {
         equipamentoService.createEquipamento(endPoint);
@@ -59,7 +61,6 @@ public class EquipamentoSteps {
     public void euEnviarARequisicaoParaOEndpointDeListagemDeEquipamentos(String endPoint) {
         equipamentoService.getAllEquipamentos(endPoint);
     }
-
 
     @E("que eu tenha os seguintes dados atualizados do equipamento:")
     public void queEuTenhaOsSeguintesDadosAtualizadosDoEquipamento(List<Map<String, String>> rows) {
@@ -76,15 +77,28 @@ public class EquipamentoSteps {
         equipamentoService.updateEquipamento("/equipamentos", idEquipamentoCriado);
     }
 
-
     @Quando("eu enviar a requisição de atualização para o endpoint {string} de equipamento inexistente")
     public void euEnviarARequisicaoDeAtualizacaoParaEquipamentoInexistente(String endPoint) {
         equipamentoService.updateEquipamentoInexistente("/equipamentos", 999999L);
     }
 
-
     @Então("o status code da resposta de equipamentos deve ser {int}")
     public void oStatusCodeDaRespostaDeEquipamentosDeveSer(int statusCode) {
         Assert.assertEquals(statusCode, equipamentoService.response.statusCode());
     }
+
+    @E("que o arquivo de contrato do equipamento esperado é o {string}")
+    public void queOArquivoDeContratoEsperadoEO(String contract) throws IOException {
+        equipamentoService.setContract(contract);
+    }
+
+    @Então("a resposta da requisição deve estar em conformidade com o contrato do equipamento selecionado")
+    public void aRespostaDaRequisicaoDeveEstarEmConformidadeComOContratoSelecionado() throws IOException, JSONException {
+        Set<ValidationMessage> validateResponse = equipamentoService.validateResponseAgainstSchema();
+        Assert.assertTrue(
+                "O contrato está inválido. Erros encontrados: " + validateResponse,
+                validateResponse.isEmpty()
+        );
+    }
+
 }
