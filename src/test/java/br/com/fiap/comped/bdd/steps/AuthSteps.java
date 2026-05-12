@@ -1,5 +1,6 @@
 package br.com.fiap.comped.bdd.steps;
 
+import br.com.fiap.comped.bdd.model.ErrorMessageModel;
 import br.com.fiap.comped.bdd.service.AuthService;
 import io.cucumber.java.pt.Dado;
 import io.cucumber.java.pt.Então;
@@ -43,5 +44,18 @@ public class AuthSteps {
         String token = authService.response.jsonPath().getString("token");
         Assert.assertNotNull("Token não encontrado na resposta", token);
         Assert.assertFalse("Token está vazio", token.isBlank());
+    }
+
+    @Então("o corpo de resposta de erro da api deve retornar a mensagem {string}")
+    public void oCorpoDeRespostaDeErroDaApiDeveRetornarAMensagem(String message) {
+        String responseBody = authService.response.asString();
+
+        ErrorMessageModel errorModel = authService.gson.fromJson(responseBody, ErrorMessageModel.class);
+
+        String mensagemRetornada = errorModel.getMessage() != null ?
+                                   errorModel.getMessage() :
+                                   errorModel.getErro();
+
+        Assert.assertEquals("Mensagem de erro não corresponde", message, mensagemRetornada);
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ApplicationExceptionHandler {
@@ -22,12 +23,12 @@ public class ApplicationExceptionHandler {
         Map<String, String> errorMap = new HashMap<>();
         List<FieldError> campos = error.getBindingResult().getFieldErrors();
 
-        for(FieldError campo : campos) {
-            errorMap.put(campo.getField(), campo.getDefaultMessage());
+        if (!campos.isEmpty()) {
+            // Sempre usa "message" como chave → consistente para o BDD
+            errorMap.put("message", campos.get(0).getDefaultMessage());
         }
 
         return errorMap;
-
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
@@ -40,6 +41,14 @@ public class ApplicationExceptionHandler {
 
         return errorMap;
 
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(UsuarioNaoEncontradoException.class)
+    public Map<String, String> handleUsuarioNaoEncontrado(UsuarioNaoEncontradoException error) {
+        Map<String, String> errorMap = new HashMap<>();
+        errorMap.put("message", error.getMessage());
+        return errorMap;
     }
 
 }

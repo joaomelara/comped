@@ -1,0 +1,95 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1778543592.json",
+  "title": "Root",
+  "type": "object",
+  "required": [
+    "idEquipamento",
+    "setor",
+    "nomeEquipamento",
+    "dataInstalacao",
+    "ativo",
+    "limiteKwh"
+  ],
+  "properties": {
+    "idEquipamento": {
+      "$id": "#root/idEquipamento",
+      "title": "Idequipamento",
+      "type": "integer",
+      "examples": [
+        62
+      ],
+      "default": 0
+    },
+    "setor": {
+      "$id": "#root/setor",
+      "title": "Setor",
+      "type": "object",
+      "required": [
+        "idSetor",
+        "nomeSetor"
+      ],
+      "properties": {
+        "idSetor": {
+          "$id": "#root/setor/idSetor",
+          "title": "Idsetor",
+          "type": "integer",
+          "examples": [
+            1
+          ],
+          "default": 0
+        },
+        "nomeSetor": {
+          "$id": "#root/setor/nomeSetor",
+          "title": "Nomesetor",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "TI"
+          ],
+          "pattern": "^.*$"
+        }
+      }
+    }
+  ,
+    "nomeEquipamento": {
+      "$id": "#root/nomeEquipamento",
+      "title": "Nomeequipamento",
+      "type": "string",
+      "default": "",
+      "examples": [
+        "Computador Servidor 4"
+      ],
+      "pattern": "^.*$"
+    },
+    "dataInstalacao": {
+      "$id": "#root/dataInstalacao",
+      "title": "Datainstalacao",
+      "type": "string",
+      "default": "",
+      "examples": [
+        "2025-11-04"
+      ],
+      "pattern": "^.*$"
+    },
+    "ativo": {
+      "$id": "#root/ativo",
+      "title": "Ativo",
+      "type": "integer",
+      "examples": [
+        1
+      ],
+      "default": 0
+    },
+    "limiteKwh": {
+      "$id": "#root/limiteKwh",
+      "title": "Limitekwh",
+      "type": "integer",
+      "examples": [
+        500
+      ],
+      "default": 0
+    }
+  }
+}

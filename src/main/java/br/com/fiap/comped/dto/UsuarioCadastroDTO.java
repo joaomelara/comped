@@ -13,7 +13,7 @@ public record UsuarioCadastroDTO(
         String nomeUsuario,
 
         @NotBlank(message = "O e-mail do usuário é obrigatório!")
-        @Email(message = "O e-mail do usuário não é válido!")
+        @Email(message = "Email deve ser um endereço de email válido")
         String emailUsuario,
 
         @NotBlank(message = "A senha é obrigatória!")

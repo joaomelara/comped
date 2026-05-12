@@ -41,6 +41,7 @@ Funcionalidade: Autenticação de usuários
       | role         | USER          |
     Quando eu enviar a requisição para o endpoint "/auth/register" de registro
     Então o status code da resposta de auth deve ser 400
+    E o corpo de resposta de erro da api deve retornar a mensagem "Email deve ser um endereço de email válido"
 
   Cenário: Tentativa de registro sem nome
     Dado que eu tenha os seguintes dados de autenticação:
