@@ -1,30 +1,20 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/object1778541785.json",
+  "$id": "https://example.com/object1778548020.json",
   "title": "Root",
   "type": "object",
   "required": [
-    "id",
     "nomeSetor"
   ],
   "properties": {
-    "id": {
-      "$id": "#root/id",
-      "title": "Id",
-      "type": "integer",
-      "examples": [
-        1
-      ],
-      "default": 0
-    },
     "nomeSetor": {
       "$id": "#root/nomeSetor",
       "title": "Nomesetor",
       "type": "string",
       "default": "",
       "examples": [
-        "IT"
+        "bungus"
       ],
       "pattern": "^.*$"
     }
