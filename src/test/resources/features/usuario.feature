@@ -24,10 +24,10 @@ Funcionalidade: Gerenciamento de usuários
     Quando eu enviar a requisição para o endpoint "/api/usuarios" de cadastro de usuários
     Então o status code da resposta deve ser 400
 
-#  Cenário: Busca de usuário por ID inexistente
-#    Dado que não existe usuário com ID 9999
-#    Quando eu enviar a requisição de busca para o endpoint "/api/usuarios/9999"
-#    Então o status code da resposta deve ser 404
+  Cenário: Busca de usuário por ID inexistente
+    Dado que não existe usuário com ID 9999
+    Quando eu enviar a requisição de busca para o endpoint "/api/usuarios/9999"
+    Então o status code da resposta deve ser 404
 
   Cenário: Listagem de todos os usuários
     Dado que existe pelo menos um usuário cadastrado no sistema

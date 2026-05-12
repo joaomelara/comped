@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 
 import static io.restassured.RestAssured.given;
 
@@ -18,19 +19,15 @@ public class SetorService {
 
     public Response response;
 
-    String baseUrl = "http://localhost:8080";
-
+    String baseUrl    = "http://localhost:8080";
     String emailLogin = "ZZ@email.com";
     String senhaLogin = "123456";
 
     private String obterToken() {
-
         String body = String.format(
                 "{\"emailUsuario\":\"%s\",\"senhaUsuario\":\"%s\"}",
-                emailLogin,
-                senhaLogin
+                emailLogin, senhaLogin
         );
-
         return given()
                 .contentType(ContentType.JSON)
                 .body(body)
@@ -42,8 +39,7 @@ public class SetorService {
                 .getString("token");
     }
 
-    private io.restassured.specification.RequestSpecification request() {
-
+    private RequestSpecification request() {
         return given()
                 .header("Authorization", "Bearer " + obterToken())
                 .contentType(ContentType.JSON)
@@ -51,20 +47,17 @@ public class SetorService {
     }
 
     public void setFieldsSetor(String field, String value) {
-
         switch (field) {
-
             case "nomeSetor" -> setorModel.setNomeSetor(value);
-
-            default ->
-                    throw new IllegalStateException(
-                            "Unexpected field: " + field
-                    );
+            default -> throw new IllegalStateException("Campo inesperado: " + field);
         }
     }
 
-    // POST
     public void createSetor(String endPoint) {
+        String nomeAtual = setorModel.getNomeSetor();
+        if (nomeAtual != null && !nomeAtual.isBlank()) {
+            setorModel.setNomeSetor(nomeAtual + "_" + System.currentTimeMillis());
+        }
 
         response = request()
                 .body(gson.toJson(setorModel))
@@ -75,9 +68,7 @@ public class SetorService {
                 .response();
     }
 
-    // GET ALL
     public void getAllSetores(String endPoint) {
-
         response = request()
                 .when()
                 .get(baseUrl + endPoint)

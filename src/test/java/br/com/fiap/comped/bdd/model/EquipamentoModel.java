@@ -7,17 +7,21 @@ import lombok.Data;
 public class EquipamentoModel {
 
     @Expose(serialize = false)
-    private Long id;
+    private Long idEquipamento;
+
+    @Expose
+    private Long setorId;
 
     @Expose
     private String nomeEquipamento;
 
     @Expose
-    private Double consumoKwh;
+    private String dataInstalacao;
+
+    @Expose
+    private Double limiteKwh;
 
     @Expose
     private Boolean ativo;
-
-    @Expose
-    private Long setorId;
 }
+
