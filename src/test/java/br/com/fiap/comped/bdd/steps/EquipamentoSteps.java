@@ -87,12 +87,12 @@ public class EquipamentoSteps {
         Assert.assertEquals(statusCode, equipamentoService.response.statusCode());
     }
 
-    @E("que o arquivo de contrato esperado é o {string}")
+    @E("que o arquivo de contrato do equipamento esperado é o {string}")
     public void queOArquivoDeContratoEsperadoEO(String contract) throws IOException {
         equipamentoService.setContract(contract);
     }
 
-    @E("a resposta da requisição deve estar em conformidade com o contrato selecionado")
+    @Então("a resposta da requisição deve estar em conformidade com o contrato do equipamento selecionado")
     public void aRespostaDaRequisicaoDeveEstarEmConformidadeComOContratoSelecionado() throws IOException, JSONException {
         Set<ValidationMessage> validateResponse = equipamentoService.validateResponseAgainstSchema();
         Assert.assertTrue(

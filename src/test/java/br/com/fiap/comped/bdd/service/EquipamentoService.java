@@ -26,6 +26,10 @@ import static io.restassured.RestAssured.given;
 
 public class EquipamentoService {
 
+    String schemasPath = "src/test/resources/schemas/";
+    JSONObject jsonSchema;
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public EquipamentoModel equipamentoModel = new EquipamentoModel();
 
     public final Gson gson = new GsonBuilder()
@@ -69,6 +73,31 @@ public class EquipamentoService {
                 .accept(ContentType.JSON);
     }
 
+    private JSONObject loadJsonFromFile(String filePath) throws IOException {
+        try {
+            String jsonContent = Files.readString(Paths.get(filePath));
+            return new JSONObject(jsonContent);
+        } catch (JSONException e) {
+            throw new RuntimeException("Arquivo de schema JSON inválido: " + filePath, e);
+        }
+    }
+
+    public void setContract(String contract) throws IOException {
+        switch (contract) {
+            case "Cadastro bem-sucedido de equipamento" -> jsonSchema = loadJsonFromFile(schemasPath + "cadastro-bem-sucedido-equipamento.json");
+            default -> throw new IllegalStateException("Contrato inesperado: " + contract);
+        }
+    }
+
+    public Set<ValidationMessage> validateResponseAgainstSchema() throws IOException, JSONException {
+        JSONObject jsonResponse = new JSONObject(response.getBody().asString());
+        JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
+        JsonSchema schema = schemaFactory.getSchema(jsonSchema.toString());
+        JsonNode jsonResponseNode = mapper.readTree(jsonResponse.toString());
+        Set<ValidationMessage> schemaValidationErrors = schema.validate(jsonResponseNode);
+        return schemaValidationErrors;
+    }
+
     public void setFieldsEquipamento(String field, String value) {
         switch (field) {
             case "nomeEquipamento" -> equipamentoModel.setNomeEquipamento(value);
@@ -106,34 +135,5 @@ public class EquipamentoService {
                 .body(bodyMinimo)
                 .when().put(baseUrl + endPoint + "/" + id)
                 .then().extract().response();
-    }
-
-    String schemasPath = "src/test/resources/schemas/";
-    JSONObject jsonSchema;
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    private JSONObject loadJsonFromFile(String filePath) throws IOException {
-        try {
-            String jsonContent = Files.readString(Paths.get(filePath));
-            return new JSONObject(jsonContent);
-        } catch (JSONException e) {
-            throw new RuntimeException("Arquivo de schema JSON inválido: " + filePath, e);
-        }
-    }
-
-    public void setContract(String contract) throws IOException {
-        switch (contract) {
-            case "Cadastro bem-sucedido de setor" -> jsonSchema = loadJsonFromFile(schemasPath + "cadastro-bem-sucedido-equipamento.json");
-            default -> throw new IllegalStateException("Contrato inesperado: " + contract);
-        }
-    }
-
-    public Set<ValidationMessage> validateResponseAgainstSchema() throws IOException, JSONException {
-        JSONObject jsonResponse = new JSONObject(response.getBody().asString());
-        JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
-        JsonSchema schema = schemaFactory.getSchema(jsonSchema.toString());
-        JsonNode jsonResponseNode = mapper.readTree(jsonResponse.toString());
-        Set<ValidationMessage> schemaValidationErrors = schema.validate(jsonResponseNode);
-        return schemaValidationErrors;
     }
 }
