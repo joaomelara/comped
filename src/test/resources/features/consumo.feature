@@ -13,6 +13,8 @@ Funcionalidade: Gerenciamento de consumos
       | kwhConsumo  | 200.0                          |
     Quando eu enviar a requisição para o endpoint "/consumos" de cadastro de consumos
     Então o status code da resposta de consumo deve ser 201
+    E que o arquivo de contrato do consumo esperado é o "Cadastro bem-sucedido de consumo"
+    Então a resposta da requisição deve estar em conformidade com o contrato do consumo selecionado
 
   Cenário: Tentativa de cadastro de consumo sem data
     Dado que eu tenha os seguintes dados do consumo:
