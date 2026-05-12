@@ -406,6 +406,342 @@ https://github.com/joaomelara/comped/actions/runs/24753938439/job/72423189261
 
 ---
 
+## 🧪 Testes BDD (Behavior-Driven Development)
+
+### Visão Geral
+
+O projeto utiliza **Cucumber** para implementar testes BDD em português, permitindo que cenários de teste sejam descritos em linguagem natural e compreensível para todo o time.
+
+**Tecnologias**:
+- **Cucumber**: 7.18.1
+- **JUnit**: 5.x (integrado via cucumber-junit)
+- **REST Assured**: 5.5.0 (para requisições HTTP)
+- **Json Schema Validator**: 1.5.1 (validação de schemas)
+
+### Estrutura de Testes BDD
+
+```
+src/test/
+├── java/br/com/fiap/comped/bdd/
+│   ├── steps/          # Implementação dos passos (Given, When, Then)
+│   │   ├── AuthSteps.java
+│   │   ├── UsuarioSteps.java
+│   │   ├── ConsumoSteps.java
+│   │   ├── EquipamentoSteps.java
+│   │   └── SetorSteps.java
+│   ├── service/        # Serviços BDD (chamadas HTTP)
+│   │   ├── AuthService.java
+│   │   ├── UsuarioService.java
+│   │   └── ...
+│   ├── model/          # Modelos de dados para testes
+│   │   ├── UsuarioModel.java
+│   │   ├── AuthModel.java
+│   │   └── ...
+│   └── context/        # Compartilhamento de dados entre steps
+│       └── SharedContext.java
+└── resources/
+    ├── features/       # Cenários em Gherkin (português)
+    │   ├── usuario.feature
+    │   ├── consumo.feature
+    │   ├── equipamento.feature
+    │   ├── setor.feature
+    │   └── auth.feature
+    └── schemas/        # JSON Schemas para validação
+        ├── cadastro-bem-sucedido-usuario.json
+        ├── cadastro-bem-sucedido-consumo.json
+        └── ...
+```
+
+### Cenários Cobertos
+
+#### 📝 Gerenciamento de Usuários (`usuario.feature`)
+- ✅ Cadastro bem-sucedido de usuário
+- ✅ Validação de email inválido
+- ✅ Busca de usuário por ID inexistente (404)
+- ✅ Listagem de todos os usuários
+- ✅ Atualização de dados de usuário
+- ✅ Exclusão de usuário
+
+#### 🔐 Autenticação (`auth.feature`)
+- ✅ Login com credenciais válidas
+- ✅ Login com credenciais inválidas
+- ✅ Acesso sem token JWT
+
+#### ⚡ Consumo de Energia (`consumo.feature`)
+- ✅ Cadastro de consumo
+- ✅ Listagem de consumos
+- ✅ Validação de dados
+
+#### 🏭 Equipamentos (`equipamento.feature`)
+- ✅ Cadastro de equipamento
+- ✅ Atualização de equipamento
+- ✅ Exclusão de equipamento
+
+#### 🏢 Setores (`setor.feature`)
+- ✅ Cadastro de setor
+- ✅ Listagem de setores
+- ✅ Atualização de setor
+
+### Configuração Inicial
+
+As dependências BDD já estão configuradas no `pom.xml`. Se precisar adicionar mais, inclua:
+
+```xml
+<!-- Cucumber Java -->
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-java</artifactId>
+    <version>7.18.1</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Cucumber JUnit -->
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit</artifactId>
+    <version>7.18.1</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Rest Assured -->
+<dependency>
+    <groupId>io.rest-assured</groupId>
+    <artifactId>rest-assured</artifactId>
+    <version>5.5.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### Como Executar os Testes BDD
+
+#### 1️⃣ **Executar todos os testes BDD + unitários**
+
+```bash
+# Com Maven instalado
+mvn clean test
+
+# Com Maven Wrapper (Windows)
+mvnw.cmd clean test
+
+# Com Maven Wrapper (Linux/Mac)
+./mvnw clean test
+```
+
+#### 2️⃣ **Executar apenas testes BDD**
+
+```bash
+# Windows
+mvnw.cmd test -Dtest=*Steps
+
+# Linux/Mac
+./mvnw test -Dtest=*Steps
+```
+
+#### 3️⃣ **Executar teste de uma feature específica**
+
+```bash
+# Apenas testes de Usuário
+mvnw.cmd test -Dtest=UsuarioSteps
+
+# Apenas testes de Autenticação
+mvnw.cmd test -Dtest=AuthSteps
+
+# Apenas testes de Consumo
+mvnw.cmd test -Dtest=ConsumoSteps
+```
+
+#### 4️⃣ **Executar com mais detalhes**
+
+```bash
+# Com saída detalhada
+mvnw.cmd clean test -X
+
+# Com modo debug
+mvnw.cmd clean test -e
+```
+
+#### 5️⃣ **Executar testes BDD com aplicação rodando localmente**
+
+```bash
+# Terminal 1: Iniciar a aplicação
+mvnw.cmd spring-boot:run
+
+# Terminal 2: Executar apenas os testes BDD
+mvnw.cmd test -Dtest=*Steps
+```
+
+### Estrutura de um Cenário BDD
+
+Exemplo do arquivo `usuario.feature`:
+
+```gherkin
+# language: pt
+Funcionalidade: Gerenciamento de usuários
+  Como usuário da API
+  Quero gerenciar usuários
+  Para que os registros sejam salvos corretamente no sistema
+
+  Cenário: Cadastro bem-sucedido de usuário
+    Dado que eu tenha os seguintes dados do usuário:
+      | campo         | valor              |
+      | nomeUsuario   | João Silva         |
+      | emailUsuario  | joao@email.com     |
+      | senhaUsuario  | Senha@123          |
+      | role          | USER               |
+    Quando eu enviar a requisição para o endpoint "/api/usuarios" de cadastro de usuários
+    Então o status code da resposta deve ser 201
+```
+
+### Escrevendo Novos Cenários BDD
+
+#### 1. **Criar arquivo `.feature`**
+
+Crie um novo arquivo em `src/test/resources/features/` com o nome descritivo:
+
+```gherkin
+# language: pt
+Funcionalidade: Descrição da funcionalidade
+  Como [tipo de usuário]
+  Quero [ação]
+  Para que [benefício]
+
+  Cenário: Descrição do cenário
+    Dado uma condição inicial
+    Quando uma ação é executada
+    Então um resultado é esperado
+```
+
+#### 2. **Implementar os Steps**
+
+Crie uma classe em `src/test/java/br/com/fiap/comped/bdd/steps/`:
+
+```java
+package br.com.fiap.comped.bdd.steps;
+
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Então;
+
+public class NovaFuncionalidadeSteps {
+    
+    @Dado("uma condição inicial")
+    public void umCondicaoInicial() {
+        // Implementar arranjo (Arrange)
+    }
+    
+    @Quando("uma ação é executada")
+    public void umaAcaoEhExecutada() {
+        // Implementar ação (Act)
+    }
+    
+    @Então("um resultado é esperado")
+    public void umResultadoEhEsperado() {
+        // Implementar verificação (Assert)
+    }
+}
+```
+
+#### 3. **Usar Anotações em Português**
+
+Imports disponíveis:
+
+```java
+import io.cucumber.java.pt.Dado;       // Given
+import io.cucumber.java.pt.Quando;     // When
+import io.cucumber.java.pt.Então;      // Then
+import io.cucumber.java.pt.E;          // And
+import io.cucumber.java.pt.Mas;        // But
+```
+
+#### 4. **Validar com JSON Schema** (opcional)
+
+```java
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import org.json.JSONObject;
+
+// Ler schema de validação
+String schema = new String(Files.readAllBytes(
+    Paths.get("src/test/resources/schemas/meu-schema.json")));
+
+JsonSchema jsonSchema = JsonSchemaFactory
+    .getInstance()
+    .getSchema(new JSONObject(schema));
+
+// Validar resposta
+jsonSchema.validate(new JSONObject(responseBody));
+```
+
+### Relatórios de Teste
+
+Os relatórios são gerados automaticamente no diretório `target/` após executar os testes:
+
+```
+target/
+├── test-classes/
+│   └── (bytecode compilado dos testes)
+└── surefire-reports/
+    ├── TEST-*.xml (relatórios JUnit XML)
+    └── TEST-*.txt (resumo de testes)
+```
+
+#### Visualizar Relatório HTML (com Cucumber Report Plugin)
+
+Se desejar gerar relatórios HTML mais completos, configure no `pom.xml`:
+
+```xml
+<plugin>
+    <groupId>net.masterthought</groupId>
+    <artifactId>maven-cucumber-reporting</artifactId>
+    <version>5.7.0</version>
+    <executions>
+        <execution>
+            <id>execution</id>
+            <phase>post-integration-test</phase>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <projectName>Comped</projectName>
+                <skip>false</skip>
+                <inputDirectory>${project.build.directory}/cucumber-reports</inputDirectory>
+                <outputDirectory>${project.build.directory}/cucumber-html-reports</outputDirectory>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Dicas Importantes
+
+✅ **Boas Práticas**:
+- Mantenha os cenários simples e focados
+- Use linguagem clara e próxima do negócio
+- Não repita passos em múltiplos cenários
+- Qualidade sobre quantidade de testes
+
+⚠️ **Troubleshooting**:
+
+**Problema**: "Step is undefined"
+```
+Solução: Certifique-se de que a classe Steps está no package correto 
+e que a anotação @Dado/@Quando/@Então corresponde ao texto no .feature
+```
+
+**Problema**: "Testes não rodam"
+```
+Solução: Verifique se as dependências Cucumber estão no pom.xml
+e se a aplicação está rodando (porta 8080)
+```
+
+**Problema**: "Connection refused"
+```
+Solução: Inicie a aplicação antes de executar os testes:
+mvnw spring-boot:run (em outro terminal)
+```
+
+---
+
 ## 🛠️ Tecnologias Utilizadas
 
 ### Backend
@@ -419,6 +755,9 @@ https://github.com/joaomelara/comped/actions/runs/24753938439/job/72423189261
 | **Banco de Dados** | Oracle XE | 21c |
 | **Build** | Maven | 3.8+ |
 | **Testing** | JUnit 5 | 5.x |
+| **BDD** | Cucumber | 7.18.1 |
+| **REST Testing** | REST Assured | 5.5.0 |
+| **JSON Validation** | Json Schema Validator | 1.5.1 |
 | **Migrations** | Flyway | 9.x |
 
 ### DevOps & Containers
@@ -515,6 +854,7 @@ Deployment (SSH)
 - ✅ Pipeline CI/CD com GitHub Actions
 - ✅ Build automático (Maven)
 - ✅ Testes automatizados (21 testes)
+- ✅ Testes BDD com Cucumber (5 features)
 - ✅ Deploy em Staging (automático)
 - ✅ Deploy em Produção (manual/tag)
 - ✅ Dockerfile otimizado
