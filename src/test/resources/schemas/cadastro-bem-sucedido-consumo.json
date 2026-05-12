@@ -1,0 +1,63 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1778550071.json",
+  "title": "Root",
+  "type": "object",
+  "required": [
+    "idConsumo",
+    "dataConsumo",
+    "kwhConsumo",
+    "equipamento"
+  ],
+  "properties": {
+    "idConsumo": {
+      "$id": "#root/idConsumo",
+      "title": "Idconsumo",
+      "type": "integer",
+      "examples": [
+        1
+      ],
+      "default": 0
+    },
+    "dataConsumo": {
+      "$id": "#root/dataConsumo",
+      "title": "Dataconsumo",
+      "type": "string",
+      "default": "",
+      "examples": [
+        "2026-05-12T10:00:00Z"
+      ],
+      "pattern": "^.*$"
+    },
+    "kwhConsumo": {
+      "$id": "#root/kwhConsumo",
+      "title": "Kwhconsumo",
+      "type": "integer",
+      "examples": [
+        200
+      ],
+      "default": 0
+    },
+    "equipamento": {
+      "$id": "#root/equipamento",
+      "title": "Equipamento",
+      "type": "object",
+      "required": [
+        "idEquipamento"
+      ],
+      "properties": {
+        "idEquipamento": {
+          "$id": "#root/equipamento/idEquipamento",
+          "title": "Idequipamento",
+          "type": "integer",
+          "examples": [
+            3
+          ],
+          "default": 0
+        }
+      }
+    }
+
+  }
+}

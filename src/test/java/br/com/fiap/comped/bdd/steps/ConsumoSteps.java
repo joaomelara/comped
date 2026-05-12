@@ -1,14 +1,20 @@
 package br.com.fiap.comped.bdd.steps;
 
 import br.com.fiap.comped.bdd.service.ConsumoService;
+import com.networknt.schema.ValidationMessage;
+import io.cucumber.java.PendingException;
 import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.E;
 import io.cucumber.java.pt.Então;
 import io.cucumber.java.pt.Quando;
+import org.json.JSONException;
 import org.junit.Assert;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ConsumoSteps {
 
@@ -52,5 +58,16 @@ public class ConsumoSteps {
                     columns.get("valor")
             );
         }
+    }
+
+    @E("que o arquivo de contrato do consumo esperado é o {string}")
+    public void queOArquivoDeContratoDoConsumoEsperadoÉO(String contract) throws IOException {
+        consumoService.setContract(contract);
+    }
+
+    @Então("a resposta da requisição deve estar em conformidade com o contrato do consumo selecionado")
+    public void aRespostaDaRequisiçãoDeveEstarEmConformidadeComOContratoDoConsumoSelecionado() throws JSONException, IOException {
+        Set<ValidationMessage> validateResponse = consumoService.validateResponseAgainstSchema();
+        Assert.assertTrue("O contrato está inválido. Erros encontrados: " + validateResponse, validateResponse.isEmpty());
     }
 }
