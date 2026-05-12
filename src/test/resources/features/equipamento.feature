@@ -14,6 +14,8 @@ Funcionalidade: Gerenciamento de equipamentos
       | limiteKwh       | 150.0         |
     Quando eu enviar a requisição para o endpoint "/equipamentos" de cadastro de equipamentos
     Então o status code da resposta de equipamentos deve ser 201
+    E que o arquivo de contrato esperado é o "Cadastro bem-sucedido de equipamento"
+    E a resposta da requisição deve estar em conformidade com o contrato selecionado
 
   Cenário: Tentativa de cadastro com dados inválidos (nome ausente)
     Dado que eu tenha os seguintes dados do equipamento:
